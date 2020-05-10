@@ -31,8 +31,18 @@ extern "C" {
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#define HAVEGED_SOCKET_PATH      "\0/sys/entropy/haveged"
-#define MAGIC_CHROOT             'R'
+#ifndef SO_PASSCRED
+# define SO_PASSCRED LOCAL_CREDS
+# define SO_PEERCRED LOCAL_PEEREID
+# define HAVEGED_SOCKET_PATH	"/var/run/haveged/socket"
+# define HAVE_STRUCT_UCRED
+# define ucred sockcred
+# define UCRED_UID sc_euid
+#else
+# define HAVEGED_SOCKET_PATH	"\0/sys/entropy/haveged"
+#endif
+
+#define MAGIC_CHROOT		'R'
 
 /**
  * Open and listen on a UNIX socket to get command from there

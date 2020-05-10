@@ -37,6 +37,8 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include "havegecmd.h"
+
 #ifndef HAVE_STRUCT_UCRED
 struct ucred
 {
@@ -44,9 +46,8 @@ struct ucred
    uid_t uid;                      /* UID of sending process.  */
    gid_t gid;                      /* GID of sending process.  */
 };
+# define UCRED_UID uid
 #endif
-
-#include "havegecmd.h"
 
 int socket_fd;
 
@@ -135,6 +136,8 @@ int cmd_listen(                    /* RETURN: UNIX socket file descriptor */
       goto err;
       }
 err:
+   if (su.sun_path[0] != '\0')
+      (void)unlink(su.sun_path);
    return fd;
 }
 
@@ -231,7 +234,7 @@ int socket_handler(                /* RETURN: closed file descriptor        */
    char *enqry;
    char *optarg = NULL;
    socklen_t clen;
-   int ret = -1, len;
+   int ret, len;
 
    if (fd < 0) {
       fprintf(stderr, "%s: no connection jet\n", params->daemon);
@@ -239,12 +242,12 @@ int socket_handler(                /* RETURN: closed file descriptor        */
 
    ptr = &magic[0];
    len = sizeof(magic);
-   ret = safein(fd, ptr, len);
+   (void)safein(fd, ptr, len);
 
    if (magic[1] == '\002') {       /* read argument provided */
       unsigned char alen;
 
-      ret = safein(fd, &alen, sizeof(unsigned char));
+      (void)safein(fd, &alen, sizeof(unsigned char));
 
       optarg = calloc(alen, sizeof(char));
       if (!optarg)
@@ -252,7 +255,7 @@ int socket_handler(                /* RETURN: closed file descriptor        */
 
       ptr = (unsigned char*)optarg;
       len = alen;
-      ret = safein(fd, ptr, len);
+      (void)safein(fd, ptr, len);
       }
 
    clen = sizeof(struct ucred);
@@ -265,7 +268,7 @@ int socket_handler(                /* RETURN: closed file descriptor        */
       fprintf(stderr, "%s: can not get credentials from UNIX socket part2\n", params->daemon);
       goto out;
       }
-   if (cred.uid != 0) {
+   if (cred.UCRED_UID != 0) {
       enqry = "\x15";
 
       ptr = (unsigned char *)enqry;

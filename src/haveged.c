@@ -112,7 +112,10 @@ static void show_meterInfo(H_UINT id, H_UINT event);
 static void tidy_exit(int signum);
 static void usage(int db, int nopts, struct option *long_options, const char **cmds);
 
-static sigset_t mask, omask;
+static sigset_t mask;
+#ifndef NO_DAEMON
+static sigset_t omask;
+#endif
 
 #define  ATOU(a)     (unsigned int)atoi(a)
 /**
@@ -388,7 +391,7 @@ int main(int argc, char **argv)
       else if (socket_fd == -2)
 	 fprintf(stderr, "%s: command socket already in use\n", params->daemon);
       else
-	 fprintf(stderr, "%s: can not initialize command socket: %m\n", params->daemon);
+	 fprintf(stderr, "%s: can not initialize command socket: %s\n", params->daemon, strerror(errno));
       }
 #endif
    if (params->tests_config == 0)
